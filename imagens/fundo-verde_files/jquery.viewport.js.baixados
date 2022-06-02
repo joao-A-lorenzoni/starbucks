@@ -1,0 +1,159 @@
+;(function($, window, document, undefined) {
+
+"use strict";
+
+var pluginName = "viewport",
+	
+	defaults = {
+		basePath: "/",
+		mainUri: "",
+		views: []
+	},
+
+	views = [],
+
+	// Load all views to memory
+	loadView = function (view) {
+		return $.ajax({
+			url: view.file,
+			method: "GET",
+			dataType: "html"
+		}).done(function (html) {
+			views.push({
+				uri: view.uri,
+				html: $(html),
+				onLoad: view.onLoad || function () {}
+			});
+		});
+	},
+
+	// Get the view html by view name
+	getViewByUri = function (uri) {
+		var view = views.filter(function (view) {
+			return view.uri === uri
+		}).pop();
+
+		return view ? $("<div>").addClass("view").html(view.html.clone()) : "";
+	},
+
+	// Get the view onLoad callback
+	getOnLoadByUri = function (uri) {
+		var view = views.filter(function (view) {
+			return view.uri === uri
+		}).pop();
+
+		return view.onLoad;
+	},
+
+	// Bind events
+	bindEvents = function (plugin) {
+
+		$(document).on("click", "[data-navigate]", function (event) {
+			event.preventDefault();
+			plugin.navigate($(this).data("navigate"));
+		});
+
+		$(window).on("popstate", function (e) {
+			var state = e.originalEvent.state,
+				view = null;
+
+			if (state) {
+				view = getViewByUri(state.uri);
+				plugin.navigate(state.uri, true);
+			}
+		});
+
+	};
+
+function Viewport (element, options) {
+
+	this.$element = $(element);
+	this.settings = $.extend({}, defaults, options);
+	
+	this._defaults = defaults;
+	this._name = pluginName;
+	
+	this.init();
+
+}
+
+$.extend(Viewport.prototype, {
+
+	showLoader: function () {
+		$("<div>")
+			.addClass("viewport-loader")
+			.appendTo(this.$element);
+	},
+
+	dismissLoader: function () {
+		this.$element.find(".viewport-loader").remove();
+	},
+
+	navigate: function (uri, replaceState) {
+
+		var view = getViewByUri(uri),
+			historyApi = window.history,
+			historyFn = historyApi.pushState,
+			params = [{
+				uri: uri
+			}, "", uri];
+
+		if (replaceState === true) {
+			historyFn = historyApi.replaceState;
+		}
+		
+		historyFn.apply(historyApi, params);
+		
+		this.$element.html(view);
+
+		// getOnLoadByUri(uri)();
+	
+	},
+
+	getCurrentUri: function () {
+
+		var regex = new RegExp(this.settings.basePath + "([^?]+)"),
+			href = document.location.href,
+			matches = [];
+		
+		matches = regex.exec(href.replace(/https?:\/\//, ""));
+		
+		return matches && matches.length === 2 ? matches.pop() : this.settings.mainUri;
+	
+	},
+
+	init: function() {
+
+		var viewXhrs = [],
+			plugin = this;
+
+		this.dismissLoader = this.dismissLoader.bind(this);
+
+		plugin.showLoader();
+
+		plugin.settings.views.map(function (view) {
+			viewXhrs.push(loadView($.extend({
+				uri: "",
+				file: ""
+			}, view)));
+		});
+
+		$.when.apply(plugin, viewXhrs).done(function () {
+			plugin.navigate(plugin.getCurrentUri(), true);
+			bindEvents(plugin);
+		}).always(this.dismissLoader);
+
+	}
+
+});
+
+$.fn[ pluginName ] = function( options ) {
+	return this.each( function() {
+		if ( !$.data( this, "plugin_" + pluginName ) ) {
+			$.data( this, "plugin_" +
+				pluginName, new Viewport( this, options ) );
+		}
+	} );
+};
+
+})(jQuery, window, document);
