@@ -182,13 +182,7 @@
                 font-weight: 900;
             }
             
-            .ptbr {
-                position: absolute;
-                top: 300px;
-                height: 400px;
-                width: 700px;
-                right: 0;
-            }
+            .ptbr {}
             
             .fundo-verde11 {
                 background-color: #017143;
@@ -198,8 +192,4 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-            }
-            
-            .logosobrenós {
-                padding: 40px;
             }
