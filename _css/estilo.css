@@ -64,6 +64,15 @@
                 border-radius: 58px;
             }
             
+            .cadastro {
+                background-color: #000000;
+                color: white;
+                padding: 3px;
+                padding-inline: 8px;
+                size: 10;
+                border-radius: 58px;
+            }
+            
             .content {
                 position: relative;
                 width: 100%;
@@ -201,4 +210,8 @@
                 left: 109px;
                 position: relative;
                 top: 50px;
+            }
+            
+            .issa {
+                height: 50px;
             }
